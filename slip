@@ -1,0 +1,50 @@
+#! /bin/bash
+
+function usage() {
+    echo "Uploads images taken with slop to imgur."
+    echo "That's all."
+}
+
+function curl_imgur() {
+    curl -sH "Authorization: Client-ID 1923eac1555838e" "$@"
+}
+
+function upload() {
+    file="$1"
+
+    if [ -f "$file" ]; then
+        curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload"
+    else
+        echo "File does not exist, what happened?"
+    fi
+}
+
+function slop() {
+    slop_out=$(slop)
+    x=$(echo slop_out | sed -n 1p)
+    y=$(echo slop_out | sed -n 2p)
+    w=$(echo slop_out | sed -n 3p)
+    h=$(echo slop_out | sed -n 4p)
+    geometry=$(echo slop_out | sed -n 5p | sed -e s/G=//)
+}
+
+function main() {
+    echo "$geometry"
+}
+
+type curl >/dev/null 2>/dev/null || {
+    echo "Curl is required." >&2
+    exit 1
+}
+
+if [ "$1" = "-h" -o "$1" = "--help" ]; then
+    usage
+    exit 0
+elif [ "$1" = "-v" -o "$1" = "--version" ]; then
+    echo "Version: $version"
+    exit 0
+elif [ $# == 0 ]; then
+    echo "lets go slop"
+    slop
+    main
+fi
