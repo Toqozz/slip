@@ -16,60 +16,61 @@ function curl_imgur() {
     curl -sH "Authorization: Client-ID 1923eac1555838e" "$@"
 }
 
-file=""
-output=""
 function upload() {
     file="$1"
 
     if [ -f "$file" ]; then
-        output=$(curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload")
+        curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload"
     else
-        output=$(echo "File does not exist, what happened?")
+        echo "File does not exist, what happened?"
     fi
 }
 
-geometry=""
-function slop() {
-    geometry=$(slop | sed -n 5p | sed -e s/G=// -e s/+/\|/)
+function slop_geom() {
+    slop | sed -n 5p | sed -e s/G=// -e s/+/\|/
 }
 
-wxh=""      # 1920x1080
-offset=""   # +500+500
-url=""      # imgur.com/3341uaB
 function parse() {
-    if [ "$1" = "geometry" ]; then
-        wxh=$(awk -F"|" '{ print $1 }' <<< "$geometry")
-        offset=$(awk -F"|" '{ print $2 }' <<< "$geometry")
-
+    # 1920x1080
+    if [ "$1" = "geometryx" ]; then
+        awk -F"|" '{ print $1 }' <<< "$2" 
+    # +500+500
+    elif [ "$1" = "geometry+" ]; then
+        awk -F"|" '{ print $2 }' <<< "$2"
+    # imgur.com/3341uaB
     elif [ "$1" = "imgur" ]; then
-        url=$(sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$output")
-
+        sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
+    # this should never happen
+    else
+        echo "What gives?"
+        exit 1
     fi
 }
 
-filename="" # 2016-16-04-153906.png
-function ffmpeg_ss() {
-    filename="`date +%Y-%d-%m-%H%M%S`.png"
-    ffmpeg -f x11grab -video_size "$wxh" -i "$DISPLAY+$offset" -vframes 1 test.png &> /dev/null
+function shot() {
+    extension=".png"    # 2016-16-04-153906.png
+    filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+    ffmpeg -f x11grab -video_size "$wxh" -i "$DISPLAY+$offset" -vframes 1 $filename &> /dev/null
 }
 
 function remove() {
-    rm ~/code/shell/slip/test.png
+    rm ~/code/shell/slip/"$filename"
 }
 
 function main() {
     # Run slop and get geometry from it.
-    slop
+    geometry=$(slop_geom)
     # Parse geometry.
-    parse geometry
-    ffmpeg_ss
-    upload ~/code/shell/slip/test.png
-    parse imgur
+    wxh=$(parse "geometryx" $geometry)
+    off=$(parse "geometry+" $geometry)
+    # Take the shot.
+    shot
+    # Parse imgur json into link.
+    output=$(upload "$filename")
+    url=$(parse "imgur" "$output")
+    # Delete the file.
     remove
-    echo "geometry: $geometry"
-    echo "wxh: $wxh"
-    echo "offset: $offset"
-    echo "output: $url"
+    echo "the link should be: $url"
 }
 
 type curl >/dev/null 2>/dev/null || {
