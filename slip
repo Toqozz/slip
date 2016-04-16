@@ -1,16 +1,21 @@
 #! /bin/bash
 
-dmenu_opts="screenshot
-screencast
+set -eo pipefail
+
+DMENU_OPTS="screenshot
+record
 nothing"
-dmenu_prompt="slip >"
-dmenu_cmd="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
+DMENU_RECORD_OPTS="stop
+nothing"
+DMENU_PROMPT="slip >"
+DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
+RECORD_PIDFILE="$HOME/temp/slip_pidrecord"
 
 function usage() {
     echo ""
     echo "slip [ -h | -v ]"
     echo "  Uploads images taken with ffmpeg via slop to imgur."
-    echo "  And also screencasts."
+    echo "  And also quick video recording"
     echo "  That's all."
     echo ""
     echo "  -h  show this help"
@@ -53,18 +58,19 @@ function parse() {
 
 function shot() {
     if [ "$1" = "image" ]; then
-        extension=".png"    # 2016-16-04-153906.png
-        filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+        extension=".png"    # img-2016-16-04-153906.png
+        filename="/home/toqoz/Pictures/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
         ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
     elif [ "$1" = "video" ]; then
-        extension=".mkv"    # 2016-16-04-153906.png
-        filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
-        ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" c:v libx264 -preset ultrafast $filename &> /dev/null
+        extension=".mkv"    # vid-2016-16-04-153906.mkv
+        filename="/home/toqoz/Videos/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
+        ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+        echo "$!" > "$RECORD_PIDFILE"
     fi
 }
 
 function remove() {
-    rm ~/code/shell/slip/"$filename"
+    rm ~/Pictures/"$filename"
 }
 
 function main() {
@@ -80,15 +86,22 @@ function main() {
         output=$(upload "$filename")
         url=$(parse "imgur" "$output")
         # Delete the file.
-        remove
+        # remove
         echo "$url"
-    elif [ "$1" = "screencast" ]; then
+    elif [ "$1" = "record" ]; then
         geometry=$(slop_geom)
         wxh=$(parse "geometryx" $geometry)
         off=$(parse "geometry+" $geometry)
         shot "video" "$wxh" "$off"
-        # Parse imgur json into link.
-        echo "this is the screencast menu"
+    elif [ "$1" = "stop" ]; then
+        # Get pid of ffmpeg process.
+        local pid
+        pid=$(cat "$RECORD_PIDFILE")
+        # Kill ffmpeg (stopping the recording.)
+        kill $pid
+        # Remove the pid file so that slip can be used as normal again.
+        rm "$RECORD_PIDFILE"
+        exit 0
     else
         exit 0
     fi
@@ -106,5 +119,9 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Version: $version"
     exit 0
 elif [ $# == 0 ]; then
-    main $($dmenu_cmd <<< "$dmenu_opts")
+    if [ -a "$RECORD_PIDFILE" ]; then
+        main $($DMENU_CMD <<< "$DMENU_RECORD_OPTS")
+    else
+        main $($DMENU_CMD <<< "$DMENU_OPTS")
+    fi
 fi
