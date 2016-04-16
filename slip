@@ -9,7 +9,9 @@ DMENU_RECORD_OPTS="stop
 nothing"
 DMENU_PROMPT="slip >"
 DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
-RECORD_PIDFILE="$HOME/temp/slip_pidrecord"
+RECORD_PIDFILE="/tmp/slip_record.pid"
+IMAGES="/home/toqoz/Pictures"
+VIDEOS="/home/toqoz/Videos"
 
 function usage() {
     echo ""
@@ -59,18 +61,18 @@ function parse() {
 function shot() {
     if [ "$1" = "image" ]; then
         extension=".png"    # img-2016-16-04-153906.png
-        filename="/home/toqoz/Pictures/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+        filename="$IMAGES/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
         ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
     elif [ "$1" = "video" ]; then
         extension=".mkv"    # vid-2016-16-04-153906.mkv
-        filename="/home/toqoz/Videos/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
+        filename="$VIDEOS/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
         ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
         echo "$!" > "$RECORD_PIDFILE"
     fi
 }
 
 function remove() {
-    rm ~/Pictures/"$filename"
+    rm "$filename"
 }
 
 function main() {
