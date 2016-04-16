@@ -1,8 +1,15 @@
 #! /bin/bash
 
 function usage() {
-    echo "Uploads images taken with slop to imgur."
-    echo "That's all."
+    echo ""
+    echo "slip [ -h | -v ]"
+    echo "  Uploads images taken with ffmpeg via slop to imgur."
+    echo "  And also screencasts."
+    echo "  That's all."
+    echo ""
+    echo "  -h  show this help"
+    echo "  -v  show version"
+    echo ""
 }
 
 function curl_imgur() {
@@ -11,25 +18,48 @@ function curl_imgur() {
 
 function upload() {
     file="$1"
+    output=""
 
     if [ -f "$file" ]; then
-        curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload"
+        output=$(curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload")
     else
-        echo "File does not exist, what happened?"
+        output=$(echo "File does not exist, what happened?")
     fi
 }
 
 function slop() {
-    slop_out=$(slop)
-    x=$(echo slop_out | sed -n 1p)
-    y=$(echo slop_out | sed -n 2p)
-    w=$(echo slop_out | sed -n 3p)
-    h=$(echo slop_out | sed -n 4p)
-    geometry=$(echo slop_out | sed -n 5p | sed -e s/G=//)
+    geometry=$(slop | sed -n 5p | sed -e s/G=// -e s/+/\|/)
+}
+
+function parse() {
+    if [ "$1" = "geometry" ]; then
+        wxh=$(awk -F"|" '{ print $1 }' <<< "$geometry")
+        offset=$(awk -F"|" '{ print $2 }' <<< "$geometry")
+    elif [ "$1" = "imgur" ]; then
+        url=$(sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$output")
+    fi
+}
+
+function ffmpeg_ss() {
+    ffmpeg -f x11grab -video_size "$wxh" -i "$DISPLAY+$offset" -vframes 1 test.png &> /dev/null
+}
+
+function remove() {
+    rm ~/code/shell/slip/test.png
 }
 
 function main() {
-    echo "$geometry"
+    # Run slop and get geometry from it.
+    slop
+    parse geometry
+    ffmpeg_ss
+    upload ~/code/shell/slip/test.png
+    parse imgur
+    remove
+    echo "geometry: $geometry"
+    echo "wxh: $wxh"
+    echo "offset: $offset"
+    echo "output: $url"
 }
 
 type curl >/dev/null 2>/dev/null || {
@@ -44,7 +74,5 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Version: $version"
     exit 0
 elif [ $# == 0 ]; then
-    echo "lets go slop"
-    slop
     main
 fi
