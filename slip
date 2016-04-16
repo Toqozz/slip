@@ -44,23 +44,18 @@ function upload() {
     fi
 }
 
+function clip_clear() {
+    # Clear x cliboard selection.
+    xsel -bc    # Ctrl-v / Shift-Insert.
+    # xsel -pc  # Middle click.
+}
+
 # Run slop and get the geometry line.
 function slop_geom() {
     if [ "$1" = "image" ]; then
         slop | sed -n 5p | sed -e s/G=// #-e s/+/\|/ #-e s/+/,/
     elif [ "$1" = "video" ]; then
         slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
-    fi
-}
-
-# Parse x,y -- but also imgur.
-function parse() {
-    if [ "$1" = "geometryx" ]; then
-        awk -F"|" '{ print $1 }' <<< "$2" 
-    elif [ "$1" = "geometry+" ]; then
-        awk -F"|" '{ print $2 }' <<< "$2"
-    elif [ "$1" = "imgur" ]; then
-        sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
     fi
 }
 
@@ -80,6 +75,21 @@ function shot() {
     fi
 }
 
+# Parse x,y -- but also imgur.
+function parse() {
+    if [ "$1" = "geometryx" ]; then
+        awk -F"|" '{ print $1 }' <<< "$2" 
+    elif [ "$1" = "geometry+" ]; then
+        awk -F"|" '{ print $2 }' <<< "$2"
+    elif [ "$1" = "imgur" ]; then
+        sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
+    fi
+}
+
+function notify() {
+    notify-send -t 5 "slip" "$1"
+}
+
 # Delete a file.
 function remove() {
     rm "$filename"
@@ -87,6 +97,8 @@ function remove() {
 
 function main() {
     if [ "$1" = "screenshot" ]; then
+        # Clear cliboard before doing anything.
+        clip_clear
         # Run slop and get geometry from it.
         # maim naturally supports slop's output coordinates.
         geometry=$(slop_geom "image")
@@ -95,9 +107,13 @@ function main() {
         # Parse imgur json into link.
         output=$(upload "$filename")
         url=$(parse "imgur" "$output")
+        # Notify user that upload has finished.
+        notify "$url"
         # Delete the file.
         # remove
         echo "$url"
+        echo "$url" | xsel -bi  # Read to clipboard.
+        # echo "$url" | xsel -pi  # Read to primary.
     elif [ "$1" = "record" ]; then
         geometry=$(slop_geom "video")
         wxh=$(parse "geometryx" $geometry)
@@ -109,6 +125,8 @@ function main() {
         pid=$(cat "$RECORD_PIDFILE")
         # Kill ffmpeg (stopping the recording.)
         kill $pid
+        # Notify that the recording has finished.
+        notify "finished recording."
         # Remove the pid file so that slip can be used as normal again.
         rm "$RECORD_PIDFILE"
         exit 0
