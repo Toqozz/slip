@@ -69,7 +69,6 @@ function shot() {
     if [ "$1" = "image" ]; then
         extension=".png"    # img-2016-16-04-153906.png
         filename="$IMAGES/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
-        echo "$2 $3"
         maim -g "$2" $filename
         # TODO, do we want more dependencies? (optional dependencies?)
         #ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
@@ -119,10 +118,16 @@ function main() {
 }
 
 # Dependencies.
-type curl >/dev/null 2>/dev/null || {
-    echo "Curl is required." >&2
-    exit 1
-}
+depends="curl
+maim
+slop
+ffmpeg"
+while read line
+do
+    if ! type $line &> /dev/null ; then
+        echo "$line not found, expect unexpected."
+    fi
+done <<< "$depends"
 
 # Main.
 if [ "$1" = "-h" -o "$1" = "--help" ]; then
