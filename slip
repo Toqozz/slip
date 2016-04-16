@@ -27,7 +27,7 @@ function upload() {
 }
 
 function slop_geom() {
-    slop | sed -n 5p | sed -e s/G=// -e s/+/\|/
+    slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
 }
 
 function parse() {
@@ -50,7 +50,7 @@ function parse() {
 function shot() {
     extension=".png"    # 2016-16-04-153906.png
     filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
-    ffmpeg -f x11grab -video_size "$wxh" -i "$DISPLAY+$offset" -vframes 1 $filename &> /dev/null
+    ffmpeg -f x11grab -video_size "$1" -i "$DISPLAY+$2" -vframes 1 $filename &> /dev/null
 }
 
 function remove() {
@@ -64,7 +64,7 @@ function main() {
     wxh=$(parse "geometryx" $geometry)
     off=$(parse "geometry+" $geometry)
     # Take the shot.
-    shot
+    shot "$wxh" "$off"
     # Parse imgur json into link.
     output=$(upload "$filename")
     url=$(parse "imgur" "$output")
