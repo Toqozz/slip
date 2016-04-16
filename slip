@@ -16,9 +16,10 @@ function curl_imgur() {
     curl -sH "Authorization: Client-ID 1923eac1555838e" "$@"
 }
 
+file=""
+output=""
 function upload() {
     file="$1"
-    output=""
 
     if [ -f "$file" ]; then
         output=$(curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload")
@@ -27,20 +28,28 @@ function upload() {
     fi
 }
 
+geometry=""
 function slop() {
     geometry=$(slop | sed -n 5p | sed -e s/G=// -e s/+/\|/)
 }
 
+wxh=""      # 1920x1080
+offset=""   # +500+500
+url=""      # imgur.com/3341uaB
 function parse() {
     if [ "$1" = "geometry" ]; then
         wxh=$(awk -F"|" '{ print $1 }' <<< "$geometry")
         offset=$(awk -F"|" '{ print $2 }' <<< "$geometry")
+
     elif [ "$1" = "imgur" ]; then
         url=$(sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$output")
+
     fi
 }
 
+filename="" # 2016-16-04-153906.png
 function ffmpeg_ss() {
+    filename="`date +%Y-%d-%m-%H%M%S`.png"
     ffmpeg -f x11grab -video_size "$wxh" -i "$DISPLAY+$offset" -vframes 1 test.png &> /dev/null
 }
 
@@ -51,6 +60,7 @@ function remove() {
 function main() {
     # Run slop and get geometry from it.
     slop
+    # Parse geometry.
     parse geometry
     ffmpeg_ss
     upload ~/code/shell/slip/test.png
