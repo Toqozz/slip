@@ -29,6 +29,7 @@ function usage() {
     echo ""
 }
 
+# Imgur needs to know what program is using its services.
 function curl_imgur() {
     curl -sH "Authorization: Client-ID abd3a90bbfb65e9" "$@"
 }
@@ -43,15 +44,16 @@ function upload() {
     fi
 }
 
+# Run slop and get the geometry line.
 function slop_geom() {
-    slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
+    if [ "$1" = "image" ]; then
+        slop | sed -n 5p | sed -e s/G=// #-e s/+/\|/ #-e s/+/,/
+    elif [ "$1" = "video" ]; then
+        slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
+    fi
 }
 
-# 1920x1080
-# +500+500
-# imgur.com/3341uaB
-# this should never happen
-
+# Parse x,y -- but also imgur.
 function parse() {
     if [ "$1" = "geometryx" ]; then
         awk -F"|" '{ print $1 }' <<< "$2" 
@@ -62,11 +64,15 @@ function parse() {
     fi
 }
 
+# Take the shot (or start the video.)
 function shot() {
     if [ "$1" = "image" ]; then
         extension=".png"    # img-2016-16-04-153906.png
         filename="$IMAGES/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
-        ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
+        echo "$2 $3"
+        maim -g "$2" $filename
+        # TODO, do we want more dependencies? (optional dependencies?)
+        #ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
     elif [ "$1" = "video" ]; then
         extension=".mkv"    # vid-2016-16-04-153906.mkv
         filename="$VIDEOS/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
@@ -75,6 +81,7 @@ function shot() {
     fi
 }
 
+# Delete a file.
 function remove() {
     rm "$filename"
 }
@@ -82,12 +89,10 @@ function remove() {
 function main() {
     if [ "$1" = "screenshot" ]; then
         # Run slop and get geometry from it.
-        geometry=$(slop_geom)
-        # Parse geometry.
-        wxh=$(parse "geometryx" $geometry)
-        off=$(parse "geometry+" $geometry)
+        # maim naturally supports slop's output coordinates.
+        geometry=$(slop_geom "image")
         # Take the shot.
-        shot "image" "$wxh" "$off"
+        shot "image" "$geometry"
         # Parse imgur json into link.
         output=$(upload "$filename")
         url=$(parse "imgur" "$output")
@@ -95,7 +100,7 @@ function main() {
         # remove
         echo "$url"
     elif [ "$1" = "record" ]; then
-        geometry=$(slop_geom)
+        geometry=$(slop_geom "video")
         wxh=$(parse "geometryx" $geometry)
         off=$(parse "geometry+" $geometry)
         shot "video" "$wxh" "$off"
@@ -113,11 +118,13 @@ function main() {
     fi
 }
 
+# Dependencies.
 type curl >/dev/null 2>/dev/null || {
     echo "Curl is required." >&2
     exit 1
 }
 
+# Main.
 if [ "$1" = "-h" -o "$1" = "--help" ]; then
     usage
     exit 0
