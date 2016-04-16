@@ -1,5 +1,11 @@
 #! /bin/bash
 
+dmenu_opts="screenshot
+screencast
+nothing"
+dmenu_prompt="slip >"
+dmenu_cmd="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
+
 function usage() {
     echo ""
     echo "slip [ -h | -v ]"
@@ -30,27 +36,31 @@ function slop_geom() {
     slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
 }
 
+# 1920x1080
+# +500+500
+# imgur.com/3341uaB
+# this should never happen
+
 function parse() {
-    # 1920x1080
     if [ "$1" = "geometryx" ]; then
         awk -F"|" '{ print $1 }' <<< "$2" 
-    # +500+500
     elif [ "$1" = "geometry+" ]; then
         awk -F"|" '{ print $2 }' <<< "$2"
-    # imgur.com/3341uaB
     elif [ "$1" = "imgur" ]; then
         sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
-    # this should never happen
-    else
-        echo "What gives?"
-        exit 1
     fi
 }
 
 function shot() {
-    extension=".png"    # 2016-16-04-153906.png
-    filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
-    ffmpeg -f x11grab -video_size "$1" -i "$DISPLAY+$2" -vframes 1 $filename &> /dev/null
+    if [ "$1" = "image" ]; then
+        extension=".png"    # 2016-16-04-153906.png
+        filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+        ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
+    elif [ "$1" = "video" ]; then
+        extension=".mkv"    # 2016-16-04-153906.png
+        filename="`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+        ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" c:v libx264 -preset ultrafast $filename &> /dev/null
+    fi
 }
 
 function remove() {
@@ -58,19 +68,30 @@ function remove() {
 }
 
 function main() {
-    # Run slop and get geometry from it.
-    geometry=$(slop_geom)
-    # Parse geometry.
-    wxh=$(parse "geometryx" $geometry)
-    off=$(parse "geometry+" $geometry)
-    # Take the shot.
-    shot "$wxh" "$off"
-    # Parse imgur json into link.
-    output=$(upload "$filename")
-    url=$(parse "imgur" "$output")
-    # Delete the file.
-    remove
-    echo "the link should be: $url"
+    if [ "$1" = "screenshot" ]; then
+        # Run slop and get geometry from it.
+        geometry=$(slop_geom)
+        # Parse geometry.
+        wxh=$(parse "geometryx" $geometry)
+        off=$(parse "geometry+" $geometry)
+        # Take the shot.
+        shot "image" "$wxh" "$off"
+        # Parse imgur json into link.
+        output=$(upload "$filename")
+        url=$(parse "imgur" "$output")
+        # Delete the file.
+        remove
+        echo "$url"
+    elif [ "$1" = "screencast" ]; then
+        geometry=$(slop_geom)
+        wxh=$(parse "geometryx" $geometry)
+        off=$(parse "geometry+" $geometry)
+        shot "video" "$wxh" "$off"
+        # Parse imgur json into link.
+        echo "this is the screencast menu"
+    else
+        exit 0
+    fi
 }
 
 type curl >/dev/null 2>/dev/null || {
@@ -85,5 +106,5 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Version: $version"
     exit 0
 elif [ $# == 0 ]; then
-    main
+    main $($dmenu_cmd <<< "$dmenu_opts")
 fi
