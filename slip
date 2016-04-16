@@ -2,31 +2,35 @@
 
 set -eo pipefail
 
+# Sane defaults in case of not being set in the config / config not existing.
+DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
+RECORD_PIDFILE="/tmp/slip_record.pid"
+IMAGES="/home/toqoz/Pictures"
+VIDEOS="/home/toqoz/Videos"
+DMENU_PROMPT="slip"
+
+# Load config.
+source "$HOME/.config/slip/config"
+
+# Dmenu prompts.
 DMENU_OPTS="screenshot
 record
 nothing"
 DMENU_RECORD_OPTS="stop
 nothing"
-DMENU_PROMPT="slip >"
-DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
-RECORD_PIDFILE="/tmp/slip_record.pid"
-IMAGES="/home/toqoz/Pictures"
-VIDEOS="/home/toqoz/Videos"
 
 function usage() {
+    echo "  slip [ -h | -v ]"
+    echo "      Uploads images taken with ffmpeg via slop to imgur.  Quick video recording."
+    echo "      That's all."
     echo ""
-    echo "slip [ -h | -v ]"
-    echo "  Uploads images taken with ffmpeg via slop to imgur."
-    echo "  And also quick video recording"
-    echo "  That's all."
-    echo ""
-    echo "  -h  show this help"
-    echo "  -v  show version"
+    echo "      -h  show this help"
+    echo "      -v  show version"
     echo ""
 }
 
 function curl_imgur() {
-    curl -sH "Authorization: Client-ID 1923eac1555838e" "$@"
+    curl -sH "Authorization: Client-ID abd3a90bbfb65e9" "$@"
 }
 
 function upload() {
