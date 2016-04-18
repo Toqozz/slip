@@ -137,9 +137,12 @@ function main() {
 
 # Dependencies.
 depends="curl
+dmenu
 maim
 slop
-ffmpeg"
+ffmpeg
+notify-send
+xsel"
 while read line
 do
     if ! type $line &> /dev/null ; then
