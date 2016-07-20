@@ -5,8 +5,9 @@ set -eo pipefail
 # Sane defaults in case of not being set in the config / config not existing.
 DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb #c3bea1 -nf #787564 -sb #787564 -sf #c3bea1"
 RECORD_PIDFILE="/tmp/slip_record.pid"
-IMAGES="/home/toqoz/Pictures"
-VIDEOS="/home/toqoz/Videos"
+IMAGES="$HOME/Pictures"
+VIDEOS="$HOME/Videos"
+
 DMENU_PROMPT="slip"
 
 # Load config.
