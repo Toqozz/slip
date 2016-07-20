@@ -11,7 +11,8 @@ VIDEOS="$HOME/Videos"
 DMENU_PROMPT="slip"
 
 # Load config.
-source "$HOME/.config/slip/config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
+[ -f $CONFIG ] && source $CONFIG
 
 # Dmenu prompts.
 DMENU_OPTS="screenshot
