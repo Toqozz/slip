@@ -19,10 +19,14 @@ If installed from the AUR, just use `slip`.
 Select 'screenshot', then select an area or a window.   
 When uploading is finished, the imgur url is copied to the cliboard and a notification is sent.
 
+To skip dmenu entirely and bring up a cursor ready for screenshotting, use `slip --screenshot`
+
 #### recording
 Select 'record', then select an area or window.     
 When you are finished recording, run slip again and select 'stop'.      
 The video is saved and you are notified of its completion.
+
+To skip dmenu entirely and bring up a cursor ready for recording, use `slip --record`
 
 ## qualms
 Screenshotting can also be done with ffmpeg, eliminating an (optional?) dependency.     
