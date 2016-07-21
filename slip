@@ -2,8 +2,9 @@
 
 set -eo pipefail
 
-# Sane defaults in case of not being set in the config / config not existing.
+VERSION="1.0.8"
 
+# Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
@@ -24,12 +25,15 @@ DMENU_RECORD_OPTS="stop
 nothing"
 
 function usage() {
+    echo ""
     echo "  slip [ -h | -v ]"
     echo "      Uploads images taken with ffmpeg via slop to imgur.  Quick video recording."
     echo "      That's all."
     echo ""
     echo "      -h  show this help"
     echo "      -v  show version"
+    echo "      -s  take a screenshot (skip dmenu)"
+    echo "      -r  take a video (skip dmenu)"
     echo ""
 }
 
@@ -156,8 +160,12 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
     usage
     exit 0
 elif [ "$1" = "-v" -o "$1" = "--version" ]; then
-    echo "Version: $version"
+    echo "Version: $VERSION"
     exit 0
+elif [ "$1" = "-s" -o "$1" = "--screenshot" ]; then
+    main "screenshot"
+elif [ "$1" = "-r" -o "$1" = "--record" ]; then
+    main "record"
 elif [ $# == 0 ]; then
     if [ -a "$RECORD_PIDFILE" ]; then
         main $($DMENU_CMD <<< "$DMENU_RECORD_OPTS")

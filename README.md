@@ -4,13 +4,16 @@ Slip is a simple bash program that allows screenshotting with maim, and immediat
 It uses dmenu as a front-end menu.
 
 ## install
+slip is available on the [AUR](https://aur.archlinux.org/packages/slip/).
+
 Copy the slip file to a directory of your choice.   
 Make it the file executable with `chmod +x ./slip` (where "./" is your install directory).
-
 
 ## usage
 To launch slip, run `./slip` (where "./" is wherever slip is installed).    
 Alternatively, don't make the file executable and run slip with `bash ./slip`.
+
+If installed from the AUR, just use `slip`.
 
 #### screenshot
 Select 'screenshot', then select an area or a window.   
