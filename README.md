@@ -1,7 +1,7 @@
 # slip
 Slip is a simple bash program that allows screenshotting with maim, and immediate uploading with imgur.
 
-It uses dmenu as a front-end menu.
+It uses dmenu as a front-end menu, but rofi can also easily be used.
 
 ## install
 slip is available on the [AUR](https://aur.archlinux.org/packages/slip/).
@@ -14,6 +14,9 @@ To launch slip, run `./slip` (where "./" is wherever slip is installed).
 Alternatively, don't make the file executable and run slip with `bash ./slip`.
 
 If installed from the AUR, just use `slip`.
+
+## configuration
+The config is stored in `~/.config/slip/config`.  Please see the example configuration for more information.
 
 #### screenshot
 Select 'screenshot', then select an area or a window.   
