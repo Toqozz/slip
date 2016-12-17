@@ -1,0 +1,11 @@
+#! /bin/bash
+
+#DMENU_CMD="dmenu -f -i -dim 0.5 -h 17 -p slip -fn gohup -w 2560 -y 712.5 -nb '#021b21' -nf '#e8dfd6' -sb '#f2f1b9' -sf '#032c36'"
+
+DMENU_CMD="rofi -dmenu"
+RECORD_PIDFILE="/tmp/slip_record.pid"
+IMAGES="$HOME/img/slip"
+VIDEOS="$HOME/vid/slip"
+DMENU_PROMPT="slip"
+
+SOUND=1

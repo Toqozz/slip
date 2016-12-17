@@ -17,7 +17,11 @@ DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
 
 # Load config.
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
-[ -f $CONFIG ] && source $CONFIG
+if [ -f $CONFIG ]; then
+    source $CONFIG
+else
+    echo "No config was found, using default options.  Please copy the example configuration to ~/.config/slip/config from https://github.com/Toqozz/slip"
+fi
 
 
 # Dmenu prompts.
