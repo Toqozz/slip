@@ -2,12 +2,14 @@
 
 set -eo pipefail
 
-VERSION="1.0.11"
+VERSION="1.0.12"
 
 # Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
+
+SOUND=0
 
 DMENU_PROMPT="slip"
 
@@ -79,7 +81,11 @@ function shot() {
     elif [ "$1" = "video" ]; then
         extension=".mkv"    # vid-2016-16-04-153906.mkv
         filename="$VIDEOS/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
-        ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+        if [ $SOUND == 0 ]; then
+            ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+        else
+            ffmpeg -f pulse -i 1 -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+        fi
         echo "$!" > "$RECORD_PIDFILE"
     fi
 }
