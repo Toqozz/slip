@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.15"
+VERSION="1.0.16"
 
 # Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
@@ -78,13 +78,13 @@ function slop_geom() {
 function shot() {
     if [ "$1" = "image" ]; then
         extension=".png"    # img-2016-16-04-153906.png
-        filename="$IMAGES/img-`date +%Y-%d-%m-%H%M%S`$extension"    # .png, .jpg
+        filename="$IMAGES/img-`date +%Y-%m-%d-%H%M%S`$extension"    # .png, .jpg
         maim -g "$2" $filename
         # TODO, do we want more dependencies? (optional dependencies?)
         #ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
     elif [ "$1" = "video" ]; then
         extension=".mkv"    # vid-2016-16-04-153906.mkv
-        filename="$VIDEOS/vid-`date +%Y-%d-%m-%H%M%S`$extension"    # .mkv, .mp4
+        filename="$VIDEOS/vid-`date +%Y-%m-%d-%H%M%S`$extension"    # .mkv, .mp4
         if [ $SOUND == 0 ]; then
             ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
         else
