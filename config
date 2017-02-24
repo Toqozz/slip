@@ -8,4 +8,4 @@ IMAGES="$HOME/img/slip"
 VIDEOS="$HOME/vid/slip"
 DMENU_PROMPT="slip"
 
-SOUND=1
+SOUND=0

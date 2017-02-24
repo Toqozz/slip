@@ -144,7 +144,7 @@ function main() {
         local pid
         pid=$(cat "$RECORD_PIDFILE")
         # Kill ffmpeg (stopping the recording.)
-        kill $pid
+        kill $pid || echo "Failed to kill ffmpeg, did it crash?  Removing $RECORD_PIDFILE anyway."
         # Notify that the recording has finished.
         notify "finished recording."
         # Remove the pid file so that slip can be used as normal again.
