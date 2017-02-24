@@ -33,7 +33,7 @@ nothing"
 
 function usage() {
     echo ""
-    echo "  slip [ -h | -v ]"
+    echo "  slip [ -h | -v | -s | -r | -q ]"
     echo "      Uploads images taken with ffmpeg via slop to imgur.  Quick video recording."
     echo "      That's all."
     echo ""
