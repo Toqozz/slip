@@ -4,8 +4,8 @@
 
 DMENU_CMD="rofi -dmenu"
 RECORD_PIDFILE="/tmp/slip_record.pid"
-IMAGES="$HOME/img/slip"
-VIDEOS="$HOME/vid/slip"
+IMAGES="$HOME/Pictures"
+VIDEOS="$HOME/Videos"
 DMENU_PROMPT="slip"
 
 SOUND=0
