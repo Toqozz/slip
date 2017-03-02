@@ -69,9 +69,10 @@ function clip_clear() {
 # Run slop and get the geometry line.
 function slop_geom() {
     if [ "$1" = "image" ]; then
-        slop | sed -n 5p | sed -e s/G=// #-e s/+/\|/ #-e s/+/,/
+        slop -f '%wx%h+%x+%y'
     elif [ "$1" = "video" ]; then
-        slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
+        slop -f '%wx%h+%x+%y' | sed -e s/+/\|/ -e s/+/,/
+        #slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
     fi
 }
 
