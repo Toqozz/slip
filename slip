@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.17"
+VERSION="1.0.19"
 
 # Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
