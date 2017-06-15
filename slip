@@ -8,6 +8,7 @@ VERSION="1.0.19"
 RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
+GIF_SCALE="640"
 
 SOUND=0
 
@@ -26,10 +27,19 @@ fi
 
 # Dmenu prompts.
 DMENU_OPTS="screenshot
-record
+video
+gif
 nothing"
 DMENU_RECORD_OPTS="stop
 nothing"
+DMENU_UPLOAD_OPTS_BIG="delete
+nothing"
+DMENU_UPLOAD_OPTS="upload
+delete
+nothing"
+
+# Maximum size for upload (kb).
+MAX_GIF_SIZE=10000
 
 function usage() {
     echo ""
@@ -73,26 +83,77 @@ function slop_geom() {
     elif [ "$1" = "video" ]; then
         slop -f '%wx%h+%x+%y' | sed -e s/+/\|/ -e s/+/,/
         #slop | sed -n 5p | sed -e s/G=// -e s/+/\|/ -e s/+/,/
+    elif [ "$1" = "gif" ]; then
+        slop -f '%wx%h+%x+%y' | sed -e s/+/\|/ -e s/+/,/
     fi
 }
 
 # Take the shot (or start the video.)
 function shot() {
     if [ "$1" = "image" ]; then
-        extension=".png"    # img-2016-16-04-153906.png
+        extension=".png"    # img-2016-04-16-153906.png
         filename="$IMAGES/img-`date +%Y-%m-%d-%H%M%S`$extension"    # .png, .jpg
         maim -g "$2" $filename
         # TODO, do we want more dependencies? (optional dependencies?)
         #ffmpeg -f x11grab -video_size "$2" -i "$DISPLAY+$3" -vframes 1 $filename &> /dev/null
     elif [ "$1" = "video" ]; then
-        extension=".mkv"    # vid-2016-16-04-153906.mkv
+        extension=".mkv"    # vid-2016-04-16-153906.mkv
         filename="$VIDEOS/vid-`date +%Y-%m-%d-%H%M%S`$extension"    # .mkv, .mp4
         if [ $SOUND == 0 ]; then
             ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
         else
             ffmpeg -f pulse -i 1 -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
         fi
-        echo "$!" > "$RECORD_PIDFILE"
+        echo "$! vid $filename" > "$RECORD_PIDFILE"
+    elif [ "$1" = "gif" ]; then
+        extension=".gif"    # gif-2016-04-16-153906.gif
+        filename="$VIDEOS/gif-`date +%Y-%m-%d-%H%M%S`$extension"    # .gif
+        # Scale to gif_scale (width).
+        ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -vf scale="$GIF_SCALE:-1" $filename &> /dev/null &
+        # We need to access this information later.
+        echo "$! gif $filename" > "$RECORD_PIDFILE"
+    fi
+}
+
+function kill_ffmpeg() {
+    # Kill ffmpeg (stopping the recording.)
+    kill $1 || echo "Failed to kill ffmpeg, did it crash?  Removing $RECORD_PIDFILE anyway."
+    notify "size: $2, finished recording." 10
+    # Remove the pid file so that slip can be used as normal again.
+    rm "$RECORD_PIDFILE"
+}
+
+function stop_rec() {
+    local choice
+
+    pid=$1
+    fn=$3
+    size=$(du -k $fn | cut -f1)
+
+    # Stop recording.
+    kill_ffmpeg "$pid" "$(du -h $fn | cut -f1)"
+
+    # If we have a gif, don't always save it (might be too large, or something.
+    if [ $2 = "gif" ]; then
+        if [ $size -lt $MAX_GIF_SIZE ]; then
+            # Prompt user (upload, delete, do nothing (save).
+            notify "File is small enough to upload." 10
+            choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)
+        else
+            notify "File is too large to upload." 10
+            choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS_BIG)
+        fi
+
+        if [ "$choice" = "upload" ]; then
+            clip_clear
+            output=$(upload "$fn")
+            url=$(parse "imgur" "$output")
+            notify "${url}v" 7
+            echo "${url}v"
+            echo "${url}v" | xsel -bi  # Read to clipboard.
+        elif [ "$choice" = "delete" ]; then
+            rm $fn
+        fi
     fi
 }
 
@@ -108,7 +169,7 @@ function parse() {
 }
 
 function notify() {
-    notify-send -t 5 "slip" "$1"
+    notify-send -t $2 "slip" "$1"
 }
 
 # Delete a file.
@@ -129,27 +190,29 @@ function main() {
         output=$(upload "$filename")
         url=$(parse "imgur" "$output")
         # Notify user that upload has finished.
-        notify "$url"
+        notify "$url" 7
         # Delete the file.
         # remove
         echo "$url"
         echo "$url" | xsel -bi  # Read to clipboard.
         # echo "$url" | xsel -pi  # Read to primary.
-    elif [ "$1" = "record" ]; then
+    elif [ "$1" = "video" ]; then
         geometry=$(slop_geom "video")
         wxh=$(parse "geometryx" $geometry)
         off=$(parse "geometry+" $geometry)
         shot "video" "$wxh" "$off"
+    elif [ "$1" = "gif" ]; then
+        geometry=$(slop_geom "gif")
+        wxh=$(parse "geometryx" $geometry)
+        off=$(parse "geometry+" $geometry)
+        shot "gif" "$wxh" "$off"
     elif [ "$1" = "stop" ]; then
-        # Get pid of ffmpeg process.
-        local pid
-        pid=$(cat "$RECORD_PIDFILE")
-        # Kill ffmpeg (stopping the recording.)
-        kill $pid || echo "Failed to kill ffmpeg, did it crash?  Removing $RECORD_PIDFILE anyway."
-        # Notify that the recording has finished.
-        notify "finished recording."
-        # Remove the pid file so that slip can be used as normal again.
-        rm "$RECORD_PIDFILE"
+        # Get info of recording process.
+        local info
+        # Get infor from the pidfile.
+        info=$(cat "$RECORD_PIDFILE")
+        # Stop with parameters ("<pid> <type> <filename>")
+        stop_rec $info
         exit 0
     else
         exit 0
@@ -178,7 +241,7 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
 elif [ "$1" = "-s" -o "$1" = "--screenshot" ]; then
     main "screenshot"
 elif [ "$1" = "-r" -o "$1" = "--record" ]; then
-    main "record"
+    main "video"
 elif [ "$1" = "-q" -o "$1" = "--quit" ]; then
     main "stop"
 elif [ $# == 0 ]; then
