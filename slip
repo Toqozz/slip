@@ -2,16 +2,14 @@
 
 set -eo pipefail
 
-VERSION="1.0.19"
+VERSION="1.0.20"
 
 # Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
 GIF_SCALE="640"
-
 SOUND=0
-
 DMENU_PROMPT="slip"
 
 DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
@@ -100,25 +98,26 @@ function shot() {
         extension=".mkv"    # vid-2016-04-16-153906.mkv
         filename="$VIDEOS/vid-`date +%Y-%m-%d-%H%M%S`$extension"    # .mkv, .mp4
         if [ $SOUND == 0 ]; then
-            ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+            ffmpeg -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -loglevel quiet -c:v libx264 -preset ultrafast $filename  &
         else
-            ffmpeg -f pulse -i 1 -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -c:v libx264 -preset ultrafast $filename &> /dev/null &
+            ffmpeg -f pulse -i 1 -f x11grab -video_size "$2" -framerate 60 -i "$DISPLAY+$3" -loglevel quiet -c:v libx264 -preset ultrafast $filename &
         fi
         echo "$! vid $filename" > "$RECORD_PIDFILE"
     elif [ "$1" = "gif" ]; then
         extension=".gif"    # gif-2016-04-16-153906.gif
+        tmpfilename="/tmp/gif-`date +%Y-%m-%d-%H%M%S-tmp`.mkv"
         filename="$VIDEOS/gif-`date +%Y-%m-%d-%H%M%S`$extension"    # .gif
-        # Scale to gif_scale (width).
-        ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -vf scale="$GIF_SCALE:-1" $filename &> /dev/null &
+        # Record a video to be converted to gif.
+        ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -loglevel quiet -c:v libx264 -preset ultrafast $tmpfilename &
+        #ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -vf scale="$GIF_SCALE:-1" $filename &> /dev/null &
         # We need to access this information later.
-        echo "$! gif $filename" > "$RECORD_PIDFILE"
+        echo "$! gif $tmpfilename" "$filename" > "$RECORD_PIDFILE"
     fi
 }
 
 function kill_ffmpeg() {
     # Kill ffmpeg (stopping the recording.)
     kill $1 || echo "Failed to kill ffmpeg, did it crash?  Removing $RECORD_PIDFILE anyway."
-    notify "size: $2, finished recording." 10
     # Remove the pid file so that slip can be used as normal again.
     rm "$RECORD_PIDFILE"
 }
@@ -127,14 +126,19 @@ function stop_rec() {
     local choice
 
     pid=$1
-    fn=$3
-    size=$(du -k $fn | cut -f1)
+    tfn=$3
+    fn=$4
+    pfn="${tfn}-pallete.png"
 
     # Stop recording.
-    kill_ffmpeg "$pid" "$(du -h $fn | cut -f1)"
+    kill_ffmpeg "$pid"
 
     # If we have a gif, don't always save it (might be too large, or something.
     if [ $2 = "gif" ]; then
+        ffmpeg -i "$tfn" -loglevel quiet -vf fps=15,scale="$GIF_SCALE:-1":flags=lanczos,palettegen "$pfn" &&
+        ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$GIF_SCALE:-1:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
+        size=$(du -k $fn | cut -f1)
+
         if [ $size -lt $MAX_GIF_SIZE ]; then
             # Prompt user (upload, delete, do nothing (save).
             notify "File is small enough to upload." 10
@@ -148,9 +152,9 @@ function stop_rec() {
             clip_clear
             output=$(upload "$fn")
             url=$(parse "imgur" "$output")
-            notify "${url}v" 7
-            echo "${url}v"
-            echo "${url}v" | xsel -bi  # Read to clipboard.
+            notify "$url" 7
+            echo "$url"
+            echo "$url" | xsel -bi  # Read to clipboard.
         elif [ "$choice" = "delete" ]; then
             rm $fn
         fi
