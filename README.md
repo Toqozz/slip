@@ -15,23 +15,41 @@ Alternatively, don't make the file executable and run slip with `bash ./slip`.
 
 If installed from the AUR, just use `slip`.
 
-## configuration
-The config is stored in `~/.config/slip/config`.  Please see the example configuration for more information.
+## usage
 
 #### screenshot
-Select 'screenshot', then select an area or a window.   
-When uploading is finished, the imgur url is copied to the cliboard and a notification is sent.
+1. Select 'screenshot.'
+2. Select an area or a window.
+3. Wait for uploading to complete.
+4. An imgur url is copied to the clipboard. 
 
 To skip dmenu entirely and bring up a cursor ready for screenshotting, use `slip --screenshot`
 
-#### recording
-Select 'record', then select an area or window.     
-When you are finished recording, run slip again and select 'stop'.      
-The video is saved and you are notified of its completion.
+#### recording gifs
+1. Select 'gif.'
+2. Select an area or window.     
+3. When you are finished recording, run slip again and select 'stop.'      
+4. Either 'upload,' 'delete,' or 'do nothing' to the saved file.
+5. ...
 
-To skip dmenu entirely and bring up a cursor ready for recording, use `slip --record`
+To skip dmenu entirely and bring up a cursor ready for recording a gif, use `slip --gif`
 
-## qualms
+#### recording videos
+1. Select 'video'
+2. Select an area or window.
+3. When finished, run slip again and select 'stop.'
+4. Video is saved.
+
+To skip dmenu entirely and bring up a cursor ready for recording a video, use `slip --record`
+
+## config
+If you want to change some available settings, you probably want to copy the example config (found in this github repo), to `~/.config/slip/config`.
+
+If you installed from the aur, the example config can also be found at `/usr/share/doc/slip/config`.
+
+Hopefully the config file is pretty self explanatory; I'll get around to commenting it better at some point.
+
+## extra
 Screenshotting can also be done with ffmpeg, eliminating an (optional?) dependency.     
 Most people prefer maim for screenshots which is why it has been left in.
 
