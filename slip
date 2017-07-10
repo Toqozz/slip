@@ -135,7 +135,6 @@ function stop_rec() {
     tfn=$3                      # Temp file name (for gifs).
     fn=$4                       # File name for the gif/vid we're saving.
     pfn="${tfn}-palette.png"    # Palette file name (for gif rendering).
-    #pfn="/tmp/palette.png"    # Palette file name (for gif rendering).
 
     # Stop recording.
     kill_ffmpeg "$pid"
@@ -151,7 +150,7 @@ function stop_rec() {
         fi
 
         notify "Converting to gif…" 7
-        #ffmpeg -i "$tfn" -loglevel quiet -vf fps=15,scale="$ratio":flags=lanczos,palettegen "$pfn" &&
+        # Give enough time to save the file.
         sleep 1 && ffmpeg -i "$tfn" -loglevel quiet -vf fps=15,scale="$ratio":flags=lanczos,palettegen "$pfn" &&
         ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
         size=$(du -k $fn | cut -f1)
