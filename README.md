@@ -32,7 +32,7 @@ To skip dmenu entirely and bring up a cursor ready for screenshotting, use `slip
 4. Either 'upload,' 'delete,' or 'do nothing' to the saved file.
 5. ...
 
-To skip dmenu entirely and bring up a cursor ready for recording a gif, use `slip --gif`
+To skip dmenu entirely and bring up a cursor ready for recording a gif, use `slip --gif` to begin recording, and `slip --stop` to stop recording.
 
 #### recording videos
 1. Select 'video'
@@ -40,7 +40,7 @@ To skip dmenu entirely and bring up a cursor ready for recording a gif, use `sli
 3. When finished, run slip again and select 'stop.'
 4. Video is saved.
 
-To skip dmenu entirely and bring up a cursor ready for recording a video, use `slip --record`
+To skip dmenu entirely and bring up a cursor ready for recording a video, use `slip --record`, and `slip --stop` to stop recording.
 
 ## config
 If you want to change some available settings, you probably want to copy the example config (found in this github repo), to `~/.config/slip/config`.

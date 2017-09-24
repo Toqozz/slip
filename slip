@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.21"
+VERSION="1.0.21.1"
 
 # Sane defaults in case of not being set in the config / config not existing.
 RECORD_PIDFILE="/tmp/slip_record.pid"
@@ -50,7 +50,7 @@ function usage() {
     echo "      -s  take a screenshot (skip dmenu)"
     echo "      -g  take a gif (skip dmenu)"
     echo "      -r  take a video (skip dmenu)"
-    echo "      -q  stop recording a video (skip dmenu) (only when recording)"
+    echo "      -q  stop recording a video / gif (skip dmenu) (only when recording)"
     echo ""
 }
 
@@ -265,7 +265,7 @@ elif [ "$1" = "-g" -o "$1" = "--gif" ]; then
     main "gif"
 elif [ "$1" = "-r" -o "$1" = "--record" ]; then
     main "video"
-elif [ "$1" = "-q" -o "$1" = "--quit" ]; then
+elif [ "$1" = "-q" -o "$1" = "--stop" ]; then
     main "stop"
 elif [ $# == 0 ]; then
     if [ -a "$RECORD_PIDFILE" ]; then
