@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.22.1"
+VERSION="1.0.22.2"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -188,7 +188,6 @@ function stop_rec() {
         ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
         size=$(du -k $fn | cut -f1)
 
-        echo "$size"
         if [ "$size" -lt "${MAX_GIF_SIZE}" ]; then
             # Prompt user (upload, delete, do nothing (save).
             notify "File is small enough to upload." 10
