@@ -15,8 +15,6 @@ DMENU_PROMPT="slip"
 
 DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
 
-UPLOAD_TO_ACC=1
-
 # Load config.
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
 if [ -f $CONFIG ]; then
@@ -67,7 +65,7 @@ function upload() {
     file="$1"
 
     if [ -f "$file" ]; then
-        if [ $UPLOAD_TO_ACC -eq 1 ]; then
+        if [ -f "$CREDENTIALS_FILE" ]; then
             # We have an auth token to use.
             check_auth_credentials
             if [ $? -ne 1 ]; then
