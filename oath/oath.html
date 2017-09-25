@@ -7,27 +7,20 @@
     <body>
         <div id="choice">
             <h2>JQuery Code for getting current URL and Hash </h2>
-
         </div>
 
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <script>
-                      
-            //windo.location.pathname will give you path, after http://
-            var path = window.location.pathname;
-            alert("window.location.pathname : " + path);
-          
-            var href = window.location.href;
-            alert("window.location.href : " + href);
-          
-            var hash = window.location.hash;
-            alert("window.location.hash : " + hash);
-
             $(document).ready(function(){
+                var $result = document.querySelector('.results');
                 //JQuery code for getting current URL
-                var URL = $(location).attr('href');
-                alert("Current URL Using JQuery : " + URL);
+                var hash = $(location).attr('hash');
+                alert("Current HASH Using JQuery : " + hash);
+                $jqValue.html($hash.val());
             });
         </script>
+
+        <h2>hash</h2>
+        <span class="results">null</span>
     </body>
 </html>
