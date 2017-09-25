@@ -5,6 +5,7 @@ set -eo pipefail
 VERSION="1.0.21.1"
 
 # Sane defaults in case of not being set in the config / config not existing.
+CREDENTIALS_FILE="$HOME/.config/slip/credentials"
 RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
@@ -14,6 +15,8 @@ DMENU_PROMPT="slip"
 
 DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
 
+UPLOAD_TO_ACC=1
+
 # Load config.
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
 if [ -f $CONFIG ]; then
@@ -22,6 +25,7 @@ else
     echo "No config was found, using default options.  Please copy the example configuration to ~/.config/slip/config from https://github.com/Toqozz/slip"
 fi
 
+CLIENT_ID="abd3a90bbfb65e9"
 
 # Dmenu prompts.
 DMENU_OPTS="screenshot
@@ -41,7 +45,7 @@ MAX_GIF_SIZE=10000
 
 function usage() {
     echo ""
-    echo "  slip [ -h | -v | -s | -r | -q ]"
+    echo "  slip [ -h | -v | -s | -r | -a | -q ]"
     echo "      Uploads images taken with ffmpeg via slop to imgur.  Quick video recording."
     echo "      That's all."
     echo ""
@@ -56,16 +60,46 @@ function usage() {
 
 # Imgur needs to know what program is using its services.
 function curl_imgur() {
-    curl -sH "Authorization: Client-ID abd3a90bbfb65e9" "$@"
+    curl -sH "$@"
 }
 
 function upload() {
     file="$1"
 
     if [ -f "$file" ]; then
-        curl_imgur -F "image=@$file" "https://api.imgur.com/3/upload"
+        if [ $UPLOAD_TO_ACC -eq 1 ]; then
+            # We have an auth token to use.
+            check_auth_credentials
+            if [ $? -ne 1 ]; then
+                # Token valid.
+                curl_imgur "Authorization: Bearer ${access_token}" -F "image=@$file" "https://api.imgur.com/3/upload"
+            fi
+        else
+            curl_imgur "Authorization: Client-ID ${CLIENT_ID}" -F "image=@$file" "https://api.imgur.com/3/upload"
+        fi
     else
         echo "File does not exist, what happened?"
+    fi
+}
+
+function check_auth_credentials() {
+    token_expire_time=0
+    if [ -f "${CREDENTIALS_FILE}" ]; then
+        source "${CREDENTIALS_FILE}"
+    fi
+
+    if [ ! -z ${access_token} ]; then
+        current_time="$(date +%s)"
+        preemptive_refresh_time="$((10*60))"
+        expired="$((current_time > (token_expire_time - preemptive_refresh_time)))"
+
+        if [ "${expired}" -eq "0" ]; then
+            #token has expired, get a new one.
+            echo 'The authorization token has expired, please get a new one.'
+            return 1;
+        fi
+    else
+        return 1;
     fi
 }
 
@@ -156,7 +190,8 @@ function stop_rec() {
         ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
         size=$(du -k $fn | cut -f1)
 
-        if [ "$size" -lt "$MAX_GIF_SIZE" ]; then
+        echo "$size"
+        if [ "$size" -lt "${MAX_GIF_SIZE}" ]; then
             # Prompt user (upload, delete, do nothing (save).
             notify "File is small enough to upload." 10
             choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)

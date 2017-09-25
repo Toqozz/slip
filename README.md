@@ -15,7 +15,7 @@ Alternatively, don't make the file executable and run slip with `bash ./slip`.
 
 If installed from the AUR, just use `slip`.
 
-## usage
+## more usage
 
 #### screenshot
 1. Select 'screenshot.'
@@ -48,6 +48,18 @@ If you want to change some available settings, you probably want to copy the exa
 If you installed from the aur, the example config can also be found at `/usr/share/doc/slip/config`.
 
 Hopefully the config file is pretty self explanatory; I'll get around to commenting it better at some point.
+
+## uploading to an account
+There really aren't many benefits to uploading to an account through the API.  You don't get an increased upload limit, and you don't get faster uploads.  The main reason for it is if you want to keep track of your uploads to an imgur account.
+
+So account support hasn't really been a big priority for slip.  Nevertheless, there exists some basic support at the current time.
+
+**To make slip upload to an account** go to [this](https://api.imgur.com/oauth2/authorize?client_id=abd3a90bbfb65e9&response_type=token) url and sign in to give slip permission to upload on your behalf.
+You'll then be taken to a page with some information about access tokens and such.
+Just put these details in the file `~/.config/slip/credentials`, and slip should automatically upload to your account in future.
+
+Currently, the access tokens expire monthly, and so you'll have to repeat the process every month to maintain a valid access token.
+There are ways around this, but they involve creating your own application with imgur's API, and a lot of extra steps.  Let me know if this is really important to you.
 
 ## extra
 Screenshotting can also be done with ffmpeg, eliminating an (optional?) dependency.     
