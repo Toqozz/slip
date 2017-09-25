@@ -2,25 +2,59 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
     <head>
-        <title>JQuery and JavaScript example to get current URL with parameters </title>
+        <title>Credentials for slip</title>
     </head>
     <body>
         <div id="choice">
-            <h2>JQuery Code for getting current URL and Hash </h2>
+            <h2>Credentials for slip</h2>
         </div>
 
-        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <script src="https://code.jquery.com/jquery-1.11.3.js"></script>
         <script>
+            $.urlParam = function (name) {
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                } else{
+                    return results[1] || 0;
+                }
+            }
+
+            // This sucks, I know.
+            $.getAccessToken = function () {
+                var result = new RegExp('[\#]access_token=([^&#]*)').exec(window.location.href);
+                if (result==null) {
+                    return null;
+                } else {
+                    return result[1] || 0;
+                }
+            }
+
             $(document).ready(function(){
-                var $result = document.querySelector('.results');
-                //JQuery code for getting current URL
                 var hash = $(location).attr('hash');
-                alert("Current HASH Using JQuery : " + hash);
-                $result.html(hash.val());
+                var arr = hash.split("#");
+
+                var $access_token = $('.access_token');
+                var $refresh_token = $('.refresh_token');
+                var $expires_in = $('.expires_in');
+                var $token_type = $('.token_type');
+                var $account_username = $('.account_username');
+
+                $access_token.html($.getAccessToken());
+                $refresh_token.html($.urlParam('refresh_token'));
+                $expires_in.html($.urlParam('expires_in'));
+                $token_type.html($.urlParam('token_type'));
+                $account_username.html($.urlParam('account_username'));
             });
         </script>
 
-        <h2>hash</h2>
-        <span class="results">null</span>
+        <h2>here</h2>
+<code style=display:block;white-space:pre-wrap>{
+    "access_token":"<span class="access_token">null</span>",
+    "refresh_token":"<span class="refresh_token">null</span>",
+    "expires_in":"<span class="expires_in">null</span>",
+    "token_type":"<span class="token_type">null</span>",
+    "account_username":"<span class="account_username">null</span>"
+}</code>
     </body>
 </html>
