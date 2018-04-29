@@ -3,6 +3,8 @@ Slip is a simple bash program that allows screenshotting with maim, and immediat
 
 It uses dmenu as a front-end menu, but rofi can also easily be used.
 
+slip is under active development, please submit a request if you think the project needs something.
+
 ## install
 slip is available on the [AUR](https://aur.archlinux.org/packages/slip/).
 
@@ -52,13 +54,13 @@ Hopefully the config file is pretty self explanatory; I'll get around to comment
 ## uploading to an account
 There really aren't many benefits to uploading to an account through the API.  You don't get an increased upload limit, and you don't get faster uploads.  The main reason for it is if you want to keep track of your uploads to an imgur account.
 
-So account support hasn't really been a big priority for slip.  Nevertheless, there exists some basic support at the current time.
+So account support hasn't really been a big priority for slip.  Nevertheless, there exists some support at the current time.
 
 **To make slip upload to an account** go to [this](https://api.imgur.com/oauth2/authorize?client_id=abd3a90bbfb65e9&response_type=token) url and sign in to give slip permission to upload on your behalf.
 You'll then be taken to a page with some information about access tokens and such.
 Just put these details in the file `~/.config/slip/credentials`, and slip should automatically upload to your account in future.
 
-Currently, the access tokens expire monthly, and so you'll have to repeat the process every month to maintain a valid access token.
+Imgur states that the access tokens expire monthly, but I've personally been using it for over 6 months now without issue.  It may be that they expire if you have not uploaded in a month.
 There are ways around this, but they involve creating your own application with imgur's API, and a lot of extra steps.  Let me know if this is really important to you.
 
 ## extra
