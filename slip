@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.3.0"
+VERSION="1.1.0.0"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
