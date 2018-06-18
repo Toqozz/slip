@@ -8,4 +8,7 @@ IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
 DMENU_PROMPT="slip"
 
+# Set to 1 if sound should be included in recordings.
 SOUND=0
+# Set to 1 if slip shouldn't upload.
+NOUPLOAD=0

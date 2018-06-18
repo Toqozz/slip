@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.0.22.3"
+VERSION="1.0.3.0"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -12,6 +12,7 @@ VIDEOS="$HOME/Videos"
 GIF_SCALE="640"
 SOUND=0
 DMENU_PROMPT="slip"
+NOUPLOAD=0
 
 DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
 
@@ -43,16 +44,17 @@ MAX_GIF_SIZE=10000
 
 function usage() {
     echo ""
-    echo "  slip [ -h | -v | -s | -r | -a | -q ]"
+    echo "  slip [ -h | -v | -s | -r | -a | -q ] -nu"
     echo "      Uploads images taken with ffmpeg via slop to imgur.  Quick video recording."
     echo "      That's all."
     echo ""
-    echo "      -h  show this help"
-    echo "      -v  show version"
-    echo "      -s  take a screenshot (skip dmenu)"
-    echo "      -g  take a gif (skip dmenu)"
-    echo "      -r  take a video (skip dmenu)"
-    echo "      -q  stop recording a video / gif (skip dmenu) (only when recording)"
+    echo "      -h  | --help         show this help"
+    echo "      -v  | --version      show version"
+    echo "      -s  | --screenshot   take a screenshot (skip dmenu)"
+    echo "      -g  | --gif          take a gif (skip dmenu)"
+    echo "      -r  | --record       take a video (skip dmenu)"
+    echo "      -nu | --no-upload   don't upload the result"
+    echo "      -q  | --stop         stop recording a video / gif (skip dmenu) (only when recording)"
     echo ""
 }
 
@@ -188,24 +190,28 @@ function stop_rec() {
         ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
         size=$(du -k $fn | cut -f1)
 
-        if [ "$size" -lt "${MAX_GIF_SIZE}" ]; then
-            # Prompt user (upload, delete, do nothing (save).
-            notify "File is small enough to upload." 10
-            choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)
-        else
-            notify "File is too large to upload." 10
-            choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS_BIG)
-        fi
+        if [ $NOUPLOAD == 0 ]; then
+            if [ "$size" -lt "${MAX_GIF_SIZE}" ]; then
+                # Prompt user (upload, delete, do nothing (save).
+                notify "File is small enough to upload." 10
+                choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)
+            else
+                notify "File is too large to upload." 10
+                choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS_BIG)
+            fi
 
-        if [ "$choice" = "upload" ]; then
-            clip_clear
-            output=$(upload "$fn")
-            url=$(parse "imgur" "$output")
-            notify "$url" 7
-            echo "$url"
-            echo "$url" | xsel -bi  # Read to clipboard.
-        elif [ "$choice" = "delete" ]; then
-            rm $fn
+            if [ "$choice" = "upload" ]; then
+                clip_clear
+                output=$(upload "$fn")
+                url=$(parse "imgur" "$output")
+                notify "$url" 7
+                echo "$url"
+                echo -n "$url" | xsel -bi  # Read to clipboard.
+            elif [ "$choice" = "delete" ]; then
+                rm $fn
+            fi
+        else
+            notify "$fn" 7
         fi
     fi
 }
@@ -218,6 +224,7 @@ function parse() {
         awk -F"|" '{ print $2 }' <<< "$2"
     elif [ "$1" = "imgur" ]; then
         sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
+        #sed -e 's/\"link\":"\([^"]*\)/\1/' -e 's/\\//g' <<< "$2"
     fi
 }
 
@@ -232,22 +239,29 @@ function remove() {
 
 function main() {
     if [ "$1" = "screenshot" ]; then
-        # Clear cliboard before doing anything.
-        clip_clear
         # Run slop and get geometry from it.
         # maim naturally supports slop's output coordinates.
         geometry=$(slop_geom "image")
         # Take the shot.
         shot "image" "$geometry"
         # Parse imgur json into link.
-        output=$(upload "$filename")
-        url=$(parse "imgur" "$output")
-        # Notify user that upload has finished.
-        notify "$url" 7
-        # Delete the file.
-        # remove
-        echo "$url"
-        echo "$url" | xsel -bi  # Read to clipboard.
+
+        # If noupload is not set.
+        if [ $NOUPLOAD == 0 ]; then
+            echo "uploading..."
+            # Clear cliboard before doing anything, so we can copy link to it later.
+            clip_clear
+            output=$(upload "$filename")
+            url=$(parse "imgur" "$output")
+            # Notify user that upload has finished.
+            notify "$url" 7
+            echo "$url"
+            # Read to clipboard, removing trailing newline.
+            echo -n "$url" | xsel -bi
+        else
+            notify "$filename" 7
+        fi
+
         # echo "$url" | xsel -pi  # Read to primary.
     elif [ "$1" = "video" ]; then
         geometry=$(slop_geom "video")
@@ -285,6 +299,11 @@ do
 done <<< "$depends"
 
 # Main.
+# Yes, we could call this stuff with integers, but this is much clearer.
+if [ "$1" = "-nu" -o "$1" = "--no-upload" -o "$2" = "-nu" -o "$2" = "--no-upload" ]; then
+    NOUPLOAD=1
+fi
+
 if [ "$1" = "-h" -o "$1" = "--help" ]; then
     usage
     exit 0
@@ -292,6 +311,7 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Version: $VERSION"
     exit 0
 elif [ "$1" = "-s" -o "$1" = "--screenshot" ]; then
+    echo "$NOUPLOAD"
     main "screenshot"
 elif [ "$1" = "-g" -o "$1" = "--gif" ]; then
     main "gif"
