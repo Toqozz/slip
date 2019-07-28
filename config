@@ -8,6 +8,12 @@ IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
 DMENU_PROMPT="slip"
 
+# Maximum resolution (either width or height) for gifs.
+# Gifs larger than this will be scaled.
+GIF_SCALE="640"
+# Gif framerate.  Higher framerate means smoother gifs, but larger filesize.
+GIF_FPS=15
+
 # Set to 1 if sound should be included in recordings.
 SOUND=0
 # Set to 1 if slip shouldn't upload.

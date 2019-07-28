@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="1.1.0.0"
+VERSION="2.0.0.0"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -10,18 +10,18 @@ RECORD_PIDFILE="/tmp/slip_record.pid"
 IMAGES="$HOME/Pictures"
 VIDEOS="$HOME/Videos"
 GIF_SCALE="640"
+GIF_FPS=15
 SOUND=0
-DMENU_PROMPT="slip"
 NOUPLOAD=0
 
-DMENU_CMD="dmenu -f -i -p $DMENU_PROMPT"
+DMENU_CMD="dmenu -f -i"
 
 # Load config.
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
 if [ -f $CONFIG ]; then
     source $CONFIG
 else
-    echo "No config was found, using default options.  Please copy the example configuration to ~/.config/slip/config from https://github.com/Toqozz/slip"
+    echo "No config was found - using default options.  Please copy the example configuration to ~/.config/slip/config from https://github.com/Toqozz/slip"
 fi
 
 CLIENT_ID="abd3a90bbfb65e9"
@@ -30,17 +30,20 @@ CLIENT_ID="abd3a90bbfb65e9"
 DMENU_OPTS="screenshot
 video
 gif
-nothing"
+exit"
 DMENU_RECORD_OPTS="stop
-nothing"
-DMENU_UPLOAD_OPTS_BIG="delete
-nothing"
-DMENU_UPLOAD_OPTS="upload
+cancel"
+DMENU_UPLOAD_OPTS_BIG="upload (gfycat)
 delete
-nothing"
+exit"
+DMENU_UPLOAD_OPTS="upload (imgur)
+upload (gfycat)
+delete
+exit"
 
 # Maximum size for upload (kb).
-MAX_GIF_SIZE=10000
+# Gfycat does not have a file limit.
+MAX_GIF_SIZE_IMGUR=10000
 
 function usage() {
     echo ""
@@ -58,12 +61,7 @@ function usage() {
     echo ""
 }
 
-# Imgur needs to know what program is using its services.
-function curl_imgur() {
-    curl -sH "$@"
-}
-
-function upload() {
+function upload_imgur() {
     file="$1"
 
     if [ -f "$file" ]; then
@@ -72,14 +70,26 @@ function upload() {
             check_auth_credentials
             if [ $? -ne 1 ]; then
                 # Token valid.
-                curl_imgur "Authorization: Bearer ${access_token}" -F "image=@$file" "https://api.imgur.com/3/upload"
+                curl -sH "Authorization: Bearer ${access_token}" -F "image=@$file" "https://api.imgur.com/3/upload"
             fi
         else
-            curl_imgur "Authorization: Client-ID ${CLIENT_ID}" -F "image=@$file" "https://api.imgur.com/3/upload"
+            # Imgur needs to know what program is using its services.
+            curl -sH "Authorization: Client-ID ${CLIENT_ID}" -F "image=@$file" "https://api.imgur.com/3/upload"
         fi
     else
         echo "File does not exist, what happened?"
     fi
+}
+
+function upload_gfycat() {
+    local file="$1"
+
+    local result=$(curl -s -XPOST https://api.gfycat.com/v1/gfycats -H "Content-Type: application/json")
+    local gfyname=$(parse "gfycat" $result)
+    curl -s "https://filedrop.gfycat.com/$gfyname" --upload-file "$file"
+
+    # No new line so we can append it easily.
+    echo -n "$gfyname"
 }
 
 function check_auth_credentials() {
@@ -145,7 +155,7 @@ function shot() {
         tmpfilename="/tmp/gif-`date +%Y-%m-%d-%H%M%S-tmp`.mkv"
         filename="$VIDEOS/gif-`date +%Y-%m-%d-%H%M%S`$extension"    # .gif
         # Record a video to be converted to gif.
-        ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -loglevel quiet -c:v libx264 -preset ultrafast $tmpfilename &
+        ffmpeg -f x11grab -video_size "$2" -framerate $GIF_FPS -i "$DISPLAY+$3" -loglevel quiet -c:v libx264 -preset ultrafast $tmpfilename &
         #ffmpeg -f x11grab -video_size "$2" -framerate 15 -i "$DISPLAY+$3" -vf scale="$GIF_SCALE:-1" $filename &> /dev/null &
 
         # We need to access this information later.
@@ -163,46 +173,64 @@ function kill_ffmpeg() {
     rm "$RECORD_PIDFILE"
 }
 
+function convert_to_gif() {
+    local tfn=$1
+    local pfn=$2
+    local fn=$3
+    local wh=$4 # 0 = width larger than height, 1 = height larger than width
+
+    local ratio
+    # If the width is larger than the height, we want to scale with the width, otherwise scale with the height.
+    if [ $wh -eq 0 ]; then
+        ratio="$GIF_SCALE:-1"
+    else
+        ratio="-1:$GIF_SCALE"
+    fi
+
+    notify "Converting to gif…" 7
+    # Give enough time to save the file.
+    sleep 1 && ffmpeg -i "$tfn" -loglevel quiet -vf fps=$GIF_FPS,scale="$ratio":flags=lanczos,palettegen "$pfn" &&
+    ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=$GIF_FPS,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
+
+    echo "$fn"
+}
+
 function stop_rec() {
     local choice
 
-    pid=$1                      # Process id (for killing ffmpeg).
-    tfn=$3                      # Temp file name (for gifs).
-    fn=$4                       # File name for the gif/vid we're saving.
-    pfn="${tfn}-palette.png"    # Palette file name (for gif rendering).
+    local pid=$1                      # Process id (for killing ffmpeg).
+    local tfn=$3                      # Temp file name (for gifs).
+    local fn=$4                       # File name for the gif/vid we're saving.
+    local pfn="${tfn}-palette.png"    # Palette file name (for gif rendering).
 
     # Stop recording.
     kill_ffmpeg "$pid"
 
-    # If we have a gif, don't always save it (might be too large, or something.
+    # When processing a gif, we canvert it straight away and then upload.
+    # NOTE: gfycat does not require the video to be converted, but we convert it anyway to store
+    #   the .gif file.
+    # Is this actually a good idea?  We could just store the .mkv instead, but then we lose the ability to store .gif.
     if [ "$2" = "gif" ]; then
-        # If the width is larger than the height, we want to scale with the width, otherwise scale with the height.
-        local ratio
-        if [ "$5" -eq 0 ]; then
-            ratio="$GIF_SCALE:-1"
-        else
-            ratio="-1:$GIF_SCALE"
-        fi
-
-        notify "Converting to gif…" 7
-        # Give enough time to save the file.
-        sleep 1 && ffmpeg -i "$tfn" -loglevel quiet -vf fps=15,scale="$ratio":flags=lanczos,palettegen "$pfn" &&
-        ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=15,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
+        fn=$(convert_to_gif "$tfn" "$pfn" "$fn" "$5")
         size=$(du -k $fn | cut -f1)
 
         if [ $NOUPLOAD == 0 ]; then
-            if [ "$size" -lt "${MAX_GIF_SIZE}" ]; then
-                # Prompt user (upload, delete, do nothing (save).
-                notify "File is small enough to upload." 10
+            if [ "$size" -lt "${MAX_GIF_SIZE_IMGUR}" ]; then
                 choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)
             else
-                notify "File is too large to upload." 10
                 choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS_BIG)
             fi
 
-            if [ "$choice" = "upload" ]; then
+            if [ "$choice" = "upload (gfycat)" ]; then
                 clip_clear
-                output=$(upload "$fn")
+                name=$(upload_gfycat "$tfn")
+                url="https://gfycat.com/$name"
+                notify "Uploading to $url..." 7
+                echo "$url"
+                echo -n "$url" | xsel -bi  # Read to clipboard.
+            elif [ "$choice" = "upload (imgur)" ]; then
+                clip_clear
+                output=$(upload_imgur "$fn")
                 url=$(parse "imgur" "$output")
                 notify "$url" 7
                 echo "$url"
@@ -210,9 +238,9 @@ function stop_rec() {
             elif [ "$choice" = "delete" ]; then
                 rm $fn
             fi
-        else
-            notify "$fn" 7
         fi
+    else
+        notify "$fn" 7
     fi
 }
 
@@ -223,18 +251,16 @@ function parse() {
     elif [ "$1" = "geometry+" ]; then
         awk -F"|" '{ print $2 }' <<< "$2"
     elif [ "$1" = "imgur" ]; then
-        sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
+        jq -r ".data.link" <<< "$2"
+        #sed -e 's/.*\"link\":"\([^"]*\).*/\1/' -e 's/\\//g' <<< "$2"
         #sed -e 's/\"link\":"\([^"]*\)/\1/' -e 's/\\//g' <<< "$2"
+    elif [ "$1" = "gfycat" ]; then
+        jq -r ".gfyname" <<< "$2"
     fi
 }
 
 function notify() {
     notify-send -t $2 "slip" "$1"
-}
-
-# Delete a file.
-function remove() {
-    rm "$filename"
 }
 
 function main() {
@@ -251,7 +277,7 @@ function main() {
             echo "uploading..."
             # Clear cliboard before doing anything, so we can copy link to it later.
             clip_clear
-            output=$(upload "$filename")
+            output=$(upload_imgur "$filename")
             url=$(parse "imgur" "$output")
             # Notify user that upload has finished.
             notify "$url" 7
@@ -278,7 +304,7 @@ function main() {
         local info
         # Get infor from the pidfile.
         info=$(cat "$RECORD_PIDFILE")
-        # Stop with parameters ("<pid> <type> <filename>")
+        # Stop with parameters ("<pid> <type> <filename> <ratio>")
         stop_rec $info
         exit 0
     else
@@ -288,13 +314,14 @@ function main() {
 
 # Dependencies.
 depends="curl
+jq
 maim
 slop
 ffmpeg"
 while read line
 do
     if ! type $line &> /dev/null ; then
-        echo "$line not found, expect unexpected."
+        echo "$line not found, expect unexpected or breakage."
     fi
 done <<< "$depends"
 
@@ -311,7 +338,6 @@ elif [ "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Version: $VERSION"
     exit 0
 elif [ "$1" = "-s" -o "$1" = "--screenshot" ]; then
-    echo "$NOUPLOAD"
     main "screenshot"
 elif [ "$1" = "-g" -o "$1" = "--gif" ]; then
     main "gif"
