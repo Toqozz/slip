@@ -1,4 +1,4 @@
-![slip demo](https://github.com/Toqozz/slip/blob/master/demo_as_webm.webm?raw=true)
+![slip demo](https://raw.githubusercontent.com/Toqozz/slip/master/demo.gif)
 
 # slip
 `slip` is a simple bash program that allows screenshotting with maim, or video/gif casting with `ffmpeg`.
