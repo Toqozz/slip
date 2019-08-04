@@ -1,3 +1,5 @@
+![slip demo](https://github.com/Toqozz/slip/blob/master/demo_as_webm.webm?raw=true)
+
 # slip
 `slip` is a simple bash program that allows screenshotting with maim, or video/gif casting with `ffmpeg`.
 Screenshots can be uploaded to [imgur](https://imgur.com), and gifs can be uploaded to either [imgur](https://imgur.com) or [gfycat](https://gfycat.com).
