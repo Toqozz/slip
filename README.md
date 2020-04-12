@@ -4,7 +4,7 @@
 `slip` is a simple bash program that allows screenshotting with maim, or video/gif casting with `ffmpeg`.
 Screenshots can be uploaded to [imgur](https://imgur.com), and gifs can be uploaded to either [imgur](https://imgur.com) or [gfycat](https://gfycat.com).
 
-It uses `dmenu` as a front-end, but `rofi` can also easily be used.
+It uses `rofi` as a front-end by default, but `dmenu` or others can also easily be used.
 
 slip is actively maintained, please submit a request if you think the project needs something.
 
@@ -30,7 +30,7 @@ If installed from the AUR, or is present in your path, just use `slip`.
 3. Wait for uploading to complete.
 4. An imgur url is copied to the clipboard. 
 
-To skip dmenu entirely and bring up a cursor ready for screenshotting, use `slip --screenshot`
+To skip the menu entirely and bring up a cursor ready for screenshotting, use `slip --screenshot`
 
 #### recording gifs
 1. Select 'gif.'
@@ -40,7 +40,7 @@ To skip dmenu entirely and bring up a cursor ready for screenshotting, use `slip
     - **NOTE**: if the file is too large for imgur, this option will be hidden.
 5. ...
 
-To skip dmenu entirely and bring up a cursor ready for recording a gif, use `slip --gif` to begin recording, and `slip --stop` to stop recording.
+To skip the menu entirely and bring up a cursor ready for recording a gif, use `slip --gif` to begin recording, and `slip --stop` to stop recording.
 
 #### recording videos
 1. Select 'video'
@@ -48,7 +48,7 @@ To skip dmenu entirely and bring up a cursor ready for recording a gif, use `sli
 3. When finished, run slip again and select 'stop.'
 4. Video is saved.
 
-To skip dmenu entirely and bring up a cursor ready for recording a video, use `slip --record`, and `slip --stop` to stop recording.
+To skip the menu entirely and bring up a cursor ready for recording a video, use `slip --record`, and `slip --stop` to stop recording.
 
 ## config
 If you want to change some available settings, you probably want to copy the example config (found in this github repo), to `~/.config/slip/config`.

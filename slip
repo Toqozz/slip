@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="2.0.0.0"
+VERSION="2.0.2"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -14,7 +14,7 @@ GIF_FPS=15
 SOUND=0
 NOUPLOAD=0
 
-DMENU_CMD="dmenu -f -i"
+DMENU_CMD="rofi -dmenu -p slip"
 
 # Load config.
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/slip/config"
@@ -187,7 +187,7 @@ function convert_to_gif() {
         ratio="-1:$GIF_SCALE"
     fi
 
-    notify "Converting to gif…" 7
+    notify "Converting to gif…"
     # Give enough time to save the file.
     sleep 1 && ffmpeg -i "$tfn" -loglevel quiet -vf fps=$GIF_FPS,scale="$ratio":flags=lanczos,palettegen "$pfn" &&
     ffmpeg -i "$tfn" -i "$pfn" -loglevel quiet -filter_complex "fps=$GIF_FPS,scale=$ratio:flags=lanczos[x];[x][1:v]paletteuse" "$fn" &&
@@ -225,14 +225,14 @@ function stop_rec() {
                 clip_clear
                 name=$(upload_gfycat "$tfn")
                 url="https://gfycat.com/$name"
-                notify "Uploading to $url..." 7
+                notify "Uploading to $url..."
                 echo "$url"
                 echo -n "$url" | xsel -bi  # Read to clipboard.
             elif [ "$choice" = "upload (imgur)" ]; then
                 clip_clear
                 output=$(upload_imgur "$fn")
                 url=$(parse "imgur" "$output")
-                notify "$url" 7
+                notify "$url"
                 echo "$url"
                 echo -n "$url" | xsel -bi  # Read to clipboard.
             elif [ "$choice" = "delete" ]; then
@@ -240,7 +240,7 @@ function stop_rec() {
             fi
         fi
     else
-        notify "$fn" 7
+        notify "$fn"
     fi
 }
 
@@ -260,7 +260,7 @@ function parse() {
 }
 
 function notify() {
-    notify-send -t $2 "slip" "$1"
+    notify-send -t 7000 "slip" "$1"
 }
 
 function main() {
@@ -280,12 +280,12 @@ function main() {
             output=$(upload_imgur "$filename")
             url=$(parse "imgur" "$output")
             # Notify user that upload has finished.
-            notify "$url" 7
+            notify "$url"
             echo "$url"
             # Read to clipboard, removing trailing newline.
             echo -n "$url" | xsel -bi
         else
-            notify "$filename" 7
+            notify "$filename"
         fi
 
         # echo "$url" | xsel -pi  # Read to primary.
