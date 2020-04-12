@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="2.0.2"
+VERSION="2.0.3-2"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -225,7 +225,7 @@ function stop_rec() {
                 clip_clear
                 name=$(upload_gfycat "$tfn")
                 url="https://gfycat.com/$name"
-                notify "Uploading to $url..."
+                notify "Uploading to $url ..."
                 echo "$url"
                 echo -n "$url" | xsel -bi  # Read to clipboard.
             elif [ "$choice" = "upload (imgur)" ]; then
@@ -274,7 +274,7 @@ function main() {
 
         # If noupload is not set.
         if [ $NOUPLOAD == 0 ]; then
-            echo "uploading..."
+            #echo "uploading..."
             # Clear cliboard before doing anything, so we can copy link to it later.
             clip_clear
             output=$(upload_imgur "$filename")
