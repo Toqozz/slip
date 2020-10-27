@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="2.0.4"
+VERSION="2.0.5"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -225,7 +225,7 @@ function stop_rec() {
                 clip_clear
                 name=$(upload_gfycat "$tfn")
                 url="https://gfycat.com/$name"
-                notify "Uploading to $url ..."
+                notify "Uploading to $url …"
                 echo "$url"
                 echo -n "$url" | xsel -bi  # Read to clipboard.
             elif [ "$choice" = "upload (imgur)" ]; then
@@ -347,8 +347,8 @@ elif [ "$1" = "-q" -o "$1" = "--stop" ]; then
     main "stop"
 elif [ $# == 0 ]; then
     if [ -a "$RECORD_PIDFILE" ]; then
-        main $($DMENU_CMD <<< "$DMENU_RECORD_OPTS")
+        main $(eval "$DMENU_CMD" <<< "$DMENU_RECORD_OPTS")
     else
-        main $($DMENU_CMD <<< "$DMENU_OPTS")
+        main $(eval "$DMENU_CMD" <<< "$DMENU_OPTS")
     fi
 fi
