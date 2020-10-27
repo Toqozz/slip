@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="2.0.5"
+VERSION="2.0.6"
 
 # Sane defaults in case of not being set in the config / config not existing.
 CREDENTIALS_FILE="$HOME/.config/slip/credentials"
@@ -216,9 +216,9 @@ function stop_rec() {
 
         if [ $NOUPLOAD == 0 ]; then
             if [ "$size" -lt "${MAX_GIF_SIZE_IMGUR}" ]; then
-                choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS)
+                choice=$(eval "$DMENU_CMD" <<< "$DMENU_UPLOAD_OPTS")
             else
-                choice=$($DMENU_CMD <<< $DMENU_UPLOAD_OPTS_BIG)
+                choice=$(eval "$DMENU_CMD" <<< "$DMENU_UPLOAD_OPTS_BIG")
             fi
 
             if [ "$choice" = "upload (gfycat)" ]; then
