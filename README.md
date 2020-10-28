@@ -74,8 +74,5 @@ Gfycat is incredibly slow (on their end) to encode.  I believe they convert to V
 
 Try to be patient.  The link will show "Page Not Found" while still busy, but you can check the status of the process with the following: `curl -i "https://api.gfycat.com/v1/gfycats/fetch/status/ReadyEnchantedGangesdolphin" | grep task`.
 
-## extra
-Screenshotting can also be done with ffmpeg, eliminating an (optional?) dependency.     
-Most people prefer maim for screenshots which is why it has been left in.
-
-If you would prefer to use ffmpeg for screenshotting also, please let me know.
+## extra   
+You can locally patch slip to use [`gifski`](https://gif.ski/) as documented at the end of [this thread](https://github.com/Toqozz/slip/issues/7#issuecomment-717655731).  If there is enough demand for this, it may become an optional feature.
