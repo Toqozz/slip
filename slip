@@ -345,7 +345,7 @@ elif [ "$1" = "-r" -o "$1" = "--record" ]; then
     main "video"
 elif [ "$1" = "-q" -o "$1" = "--stop" ]; then
     main "stop"
-elif [ $# == 0 ]; then
+elif [[ ( $# == 0 ) || ( $# == 1 && "$NOUPLOAD" == "1" ) ]]; then
     if [ -a "$RECORD_PIDFILE" ]; then
         main $(eval "$DMENU_CMD" <<< "$DMENU_RECORD_OPTS")
     else
